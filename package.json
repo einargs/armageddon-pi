@@ -1,0 +1,19 @@
+{
+  "name": "armageddon-pi",
+  "version": "0.0.0",
+  "description": "An IoT robot arm.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "einargs",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.2",
+    "jsonwebtoken": "^8.1.1",
+    "mqtt": "^2.15.2",
+    "serialport": "^6.0.5",
+    "socket.io": "^2.0.4"
+  }
+}
