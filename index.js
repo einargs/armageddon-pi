@@ -2,54 +2,40 @@ const SerialPort = require("serialport");
 const socketIO = require("socket.io");
 const express = require("express");
 
-const app = express();
-const server = app.listen(3000);
-const io = socketIO(server);
-const arduino = new SerialPort("/dev/ttyACM0", {
-  baudRate: 9600
-});
-arduino.setEncoding("ASCII");
+const { connectToArduino } = require("./arduino");
+const { IotCoreClient } = require("./iot-cloud");
 
-arduino.on("data", (chunk)=> {
-  console.log("arduino says", chunk);
-});
+const arduinoConfig = {
+  portPath: "/dev/ttyACM0",
+  baudRate: 9600,
+  readyLine: "starting"
+};
+const iotClientConfig = {
+  projectId: "armageddon-cloud",
+  cloudRegion: "us-central1",
+  registryId: "arm-devices",
+  deviceId: "arm-1",
+  privateKeyFile: "/home/einargs/Coding/Gcloud/armageddon-cloud/rsa_private.pem", //TEMP
+  algorithm: "RS256",
+  expireSeconds: 20 * 60, //NOTE expires in 20 minutes
+  mqttBridgeHostname: "mqtt.googleapis.com",
+  mqttBridgePort: 8883,
+};
 
-function sendToArduino(msg) {
-  return new Promise((resolve, reject) => {
-    console.log("Sent message to arduino", msg);
-    try {
-      arduino.write(msg, err=> {
-        if (err) reject(err);
-        else resolve();
-      });
-    } catch (err) {
-      reject(err);
+async function run() {
+  // Setup arduino and iotClient
+  const arduino = await connectToArduino(arduinoConfig);
+  const iotClient = new IotCoreClient(iotClientConfig);
+
+  // Wait for the iotClient to start
+  await iotClient.start();
+
+  // Handle config updates
+  iotClient.on("config", (config) => {
+    for (const [ledId, state] of Object.entries(config.leds)) {
+      arduino.send(`LT:${ledId}:${state?"on":"off"};`);
     }
   });
 }
 
-io.on("connection", socket=>{
-  socket.on("msg", text => {
-    sendToArduino(text)
-      .catch(console.error);
-  });
-});
-
-// Handle configuration updates
-function handleConfiguration(config) {
-  for (const [ledId, state] of Object.entries(config.leds)) {
-    sendToArduino(`LT:${ledId}:${state?"on":"off"};`);
-  }
-}
-
-// Figure out how to wait for a "ready" message
-// Will probably need to figure out how to handle
-// breaking chunks into lines.
-setTimeout(() => {
-  const { messageEmitter } = require("./iot-cloud.js");
-  
-  // Subscribe to config updates
-  messageEmitter.on("config", (config) => {
-    handleConfiguration(config);
-  });
-}, 4000);
+run();
