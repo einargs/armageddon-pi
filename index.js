@@ -3,7 +3,7 @@ const socketIO = require("socket.io");
 const express = require("express");
 
 const { connectToArduino } = require("./arduino");
-const { IotCoreClient } = require("./iot-cloud");
+const { buildIotClient } = require("./iot-cloud");
 
 const arduinoConfig = {
   portPath: "/dev/ttyACM0",
@@ -15,9 +15,9 @@ const iotClientConfig = {
   cloudRegion: "us-central1",
   registryId: "arm-devices",
   deviceId: "arm-1",
-  privateKeyFile: "/home/einargs/Coding/Gcloud/armageddon-cloud/rsa_private.pem", //TEMP
+  privateKeyFile: "/home/einargs/Auth/armageddon-pi/rsa_private.pem", //TEMP
   algorithm: "RS256",
-  expireSeconds: 20 * 60, //NOTE expires in 20 minutes
+  expireSeconds: 2 * 60,
   mqttBridgeHostname: "mqtt.googleapis.com",
   mqttBridgePort: 8883,
 };
@@ -25,10 +25,7 @@ const iotClientConfig = {
 async function run() {
   // Setup arduino and iotClient
   const arduino = await connectToArduino(arduinoConfig);
-  const iotClient = new IotCoreClient(iotClientConfig);
-
-  // Wait for the iotClient to start
-  await iotClient.start();
+  const iotClient = await buildIotClient(iotClientConfig);
 
   // Handle config updates
   iotClient.on("config", (config) => {
@@ -38,4 +35,9 @@ async function run() {
   });
 }
 
-run();
+async function testIotClient() {
+  const iotClient = await buildIotClient(iotClientConfig);
+  iotClient.on("config", console.log);
+}
+testIotClient();
+//run();

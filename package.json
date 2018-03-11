@@ -10,6 +10,7 @@
   "author": "einargs",
   "license": "ISC",
   "dependencies": {
+    "async-mqtt": "^1.0.1",
     "express": "^4.16.2",
     "jsonwebtoken": "^8.1.1",
     "mqtt": "^2.15.2",
