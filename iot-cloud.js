@@ -152,6 +152,16 @@ class IotClient extends EventEmitter {
     const qos = 1; // Quality of Service. qos = 1: at least one delivery
     await this.mqttClient.publish(topicUri, messageJson, { qos });
   }
+
+  // Publish a new state
+  async updateState(newState) {
+    await this.publish("state", newState);
+  }
+
+  // Publish an event to the telemetry field
+  async publishToTelemetry(event) {
+    await this.publish("events", event);
+  }
 }
 
 // IotClient.build wrapper
