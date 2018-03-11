@@ -17,7 +17,7 @@ const iotClientConfig = {
   deviceId: "arm-1",
   privateKeyFile: "/home/einargs/Auth/armageddon-pi/rsa_private.pem", //TEMP
   algorithm: "RS256",
-  expireSeconds: 2 * 60,
+  expireSeconds: 2 * 60, //TEMP
   mqttBridgeHostname: "mqtt.googleapis.com",
   mqttBridgePort: 8883,
 };
