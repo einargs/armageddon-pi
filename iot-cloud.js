@@ -131,7 +131,11 @@ class IotClient extends EventEmitter {
     });
 
     // Subscribe to config updates
-    await mqttClient.subscribe(makeTopicUri("config", this.globalOptions));
+    await mqttClient.subscribe(makeTopicUri("config", this.globalOptions), {
+      // The subscription's Quality of Service
+      // Necessary for acknowledging configuration updates
+      qos: 1
+    });
 
     // Handle messages
     mqttClient.on("message", (...args) => {
