@@ -6,12 +6,21 @@ const mqtt = require("async-mqtt");
 
 const readFilePromisified = util.promisify(fs.readFile);
 
+const privateKeyCache = {};
+async function getPrivateKey(fileName, {useCache}={useCache:true}) {
+  if (!(useCache && privateKeyCache[fileName])) {
+    privateKeyCache[fileName] = await readFilePromisified(fileName);
+  }
+
+  return privateKeyCache[fileName];
+}
+
 // Accepts options object
 async function createJwt(
     { projectId, privateKeyFile, expireSeconds, algorithm }) {
   // Get the privateKey before the current time
   // so the delay doesn't affect the expire time.
-  const privateKey = await readFilePromisified(privateKeyFile);
+  const privateKey = await getPrivateKey(privateKeyFile);
 
   const nowSeconds = parseInt(Date.now() / 1000);
   const token = {
@@ -24,7 +33,7 @@ async function createJwt(
 }
 
 // Accepts messageType string, gCloudOptions object
-// messageType: ["config", "state", "events"]
+// messageType: "config" | "state" | "events"
 // Config for configuration, state for state, events for telemetry
 function makeTopicUri(topic, { deviceId }) {
   return `/devices/${deviceId}/${topic}`;
@@ -45,8 +54,8 @@ function makeClientId({ projectId, cloudRegion, registryId, deviceId }) {
 // Mutates the options object and calls reconnect
 async function refreshClient(client, jwtConfig) {
   const newPasswordToken = await createJwt(jwtConfig);
-  client.options.password = newPasswordToken;
-  client.reconnect();
+  client._client.options.password = newPasswordToken;
+  client._client.reconnect();
 }
 
 // Makes a new MQTT client
