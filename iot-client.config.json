@@ -1,0 +1,11 @@
+{
+  "projectId": "armageddon-cloud",
+  "cloudRegion": "us-central1",
+  "registryId": "arm-devices",
+  "deviceId": "arm-1",
+  "privateKeyFile": "/home/pi/Armageddon/auth/rsa_private.pem",
+  "algorithm": "RS256",
+  "expireSeconds": 60,
+  "mqttBridgeHostname": "mqtt.googleapis.com",
+  "mqttBridgePort": 8883
+}

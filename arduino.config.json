@@ -1,0 +1,6 @@
+{
+  "portPath": "/dev/ttyACM0",
+  "baudRate": 9600,
+  "readyLine": "starting",
+  "motorSteps": 200
+}

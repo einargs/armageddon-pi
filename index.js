@@ -1,49 +1,49 @@
 const SerialPort = require("serialport");
+const path = require("path");
 
 const { connectToArduino } = require("./arduino");
 const { buildIotClient } = require("./iot-cloud");
 
-const arduinoConfig = {
-  portPath: "/dev/ttyACM0",
-  baudRate: 9600,
-  readyLine: "starting"
-};
-const iotClientConfig = {
-  projectId: "armageddon-cloud",
-  cloudRegion: "us-central1",
-  registryId: "arm-devices",
-  deviceId: "arm-1",
-  privateKeyFile: "/home/einargs/Auth/armageddon-pi/rsa_private.pem", //TEMP
-  algorithm: "RS256",
-  expireSeconds: 0.5 * 60, //TEMP: currently *ridiculously* short
-  mqttBridgeHostname: "mqtt.googleapis.com",
-  mqttBridgePort: 8883,
-};
+const arduinoConfig = require("./arduino.config");
+const iotClientConfig = require("./iot-client.config");
 
 // Format a LED command for the arduino.
 function formatLedCmd(ledId, state) {
   return `LT:${ledId}:${state?"on":"off"};`;
 }
 
-// Format a motor command for the arduino.
-function formatMotorCmd({
-    base, shoulder, elbow, horizontal, vertical, rotation}) {
-  return `MC:${
-      base}:${
-      shoulder}:${
-      elbow}:${
-      horizontal}:${
-      vertical}:${
-      rotation};`;
+function convertRadianToStep(radian) {
+  radianToStepConversionFactor =arduinoConfig.motorSteps/(Math.PI*2);
+  const posRadian = radian<0 ? radian+(Math.PI*2) : radian;
+  const steps = posRadian * radianToStepConversionFactor;
+  return Math.round(steps);
 }
 
+const defaultMotorCmds={
+  base:0,shoulder:0,elbow:0,horizontal:0,vertical:0,rotation:0};
+// Format a motor command for the arduino.
+function formatMotorCmd({
+    base=0, shoulder=0, elbow=0, horizontal=0, vertical=0, rotation=0}={}) {
+  const radianJointAngles = [
+      base, shoulder, elbow, horizontal, vertical, rotation];
+  const stepJointAngles = radianJointAngles.map(Number).map(convertRadianToStep);
+
+  return `MC:${stepJointAngles.join(":")};`;
+}
+
+//console.log(formatMotorCmd({shoulder:-1.5}));
+
 async function run() {
+  console.log("Runnning");
   // Setup arduino and iotClient
   const arduino = await connectToArduino(arduinoConfig);
+  console.log("Got arduino");
   const iotClient = await buildIotClient(iotClientConfig);
+  console.log("Got IoT Client");
 
   // Handle config updates
   iotClient.on("config", (config) => {
+    console.log(config);
     // Log the config object (and type to catch JSON mixups)
     console.log("config", typeof config, config);
 
@@ -59,11 +59,4 @@ async function run() {
   });
 }
 
-async function testIotClient() {
-  const iotClient = await buildIotClient(iotClientConfig);
-  iotClient.on("config", (config) => {
-    console.log("Config", typeof config, config);
-  });
-}
-//testIotClient();
 run();
